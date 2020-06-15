@@ -1,1 +1,197 @@
 
+//HomeController.cs
+
+        public IActionResult Process()
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (Customer obj in db.ListCustomers(). OrderBy(i => i.CustomerID).Take(5))
+            {
+                string jsonCustomer =
+                JsonConvert.SerializeObject(obj);
+                sb.AppendFormat("data: {0}\n\n", jsonCustomer);
+            }
+            return Content(sb.ToString(), "text/event-stream");
+        }
+
+        public void Process2()
+        {
+
+            var datas = new List<Customer>();
+            for (int i = 0; i <= 100; i++)
+                datas.AddRange(db.ListCustomers());
+
+            Response.ContentType = "text/event-stream";
+            int cnt = 0;
+
+
+            foreach (Customer obj in datas)
+            {
+                Random random = new Random();
+                int randomNumber = random.Next(10, 10000);
+                obj.dt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                obj.random = randomNumber;
+                obj.cnt = ++cnt;
+                string jsonCustomer = JsonConvert.SerializeObject(obj);
+                string data = $"data: {jsonCustomer}\n\n";                
+                HttpContext.Response.WriteAsync(data);
+                HttpContext.Response.Body.Flush();
+                System.Threading.Thread.Sleep(randomNumber);
+            }
+            Response.Body.Close();
+        }
+
+        public IActionResult Ticker()
+        {
+            return View();
+        }
+        
+        
+        
+        
+//============================== Ticker.cshtml  ========================================
+@{
+    ViewData["Title"] = "GetTicker";
+}
+
+<h1>GetTicker</h1>
+
+
+<form>
+    <input type="button" id="btnListen"
+           value="Start Listening" />
+    <br /><br />
+    <div id="headerDiv" class="tickerheading"></div>
+    <div id="targetDiv" class="ticker"></div>
+    <div id="footerDiv" class="tickerfooter"></div>
+</form>
+
+
+<ul id="myList">    
+    <li>Start</li>
+</ul>
+
+
+//===========================  site.js  ====================================
+// Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
+// for details on configuring this project to bundle and minify static web assets.
+
+// Write your JavaScript code.
+
+$(document).ready(function () {
+
+    $("#btnListen").click(function () {
+
+        var source = new EventSource('/home/process2');
+
+        source.addEventListener("open", function (event) {
+            $('#headerDiv').append
+                ('<h1>Processing started...</h1>');
+        }, false);
+
+
+        source.addEventListener("error", function (event) {
+            if (event.eventPhase == EventSource.CLOSED) {
+                $('#footerDiv').append
+                    ('<h1>Connection Closed!</h1>');
+                source.close();
+            }
+        }, false);
+
+        source.addEventListener("message", function (event) {            
+            var data = JSON.parse(event.data);
+
+            var message = data.dt + " - " + data.cnt + " " + data.CustomerID + " - " + data.CompanyName + " " + data.random;
+
+            /*
+            $("#targetDiv").append
+                ("<div>" + message + "</div>" );
+                */
+
+            /*
+            var new_msg = htmlEncode(message);
+            var newItem = document.createElement("LI");
+            var textnode = document.createTextNode(new_msg);
+            
+            var list = document.getElementById('discussion');
+            newItem.appendChild(textnode);
+            list.insertBefore(newItem, list.childNodes[0]);
+            */
+
+            var newItem = document.createElement("LI");
+            var textnode = document.createTextNode(message);
+            newItem.appendChild(textnode);
+
+            var list = document.getElementById("myList");
+            list.insertBefore(newItem, list.childNodes[0]);
+        }, false);
+
+    });
+});
+
+
+
+
+// ======================================= Model Customer.cs =======================================
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace SSE.Models
+{    
+    
+    
+    
+    public class Customer
+    {        
+        public string dt { get; set; }
+        public string CustomerID { get; set; }
+        public string CompanyName { get; set; }
+        public string ContactName { get; set; }
+        public string Country { get; set; }
+        public int random { get; set; }
+        public int cnt { get; set; }
+    }
+
+    public class DataMockup
+    {
+        List<Customer> Customers;
+
+        public DataMockup() {
+            Customers = new List<Customer>();
+            Customers.Add(new Customer { CustomerID = "0001", CompanyName = "AAA Corp", ContactName = "AAA", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0002", CompanyName = "BBB Corp", ContactName = "BBB", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0003", CompanyName = "CCC Corp", ContactName = "CCC", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0004", CompanyName = "DDD Corp", ContactName = "DDD", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0005", CompanyName = "EEE Corp", ContactName = "EEE", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0006", CompanyName = "FFF Corp", ContactName = "FFF", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0007", CompanyName = "GGG Corp", ContactName = "GGG", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0008", CompanyName = "HHH Corp", ContactName = "HHH", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0009", CompanyName = "III Corp", ContactName = "III", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0010", CompanyName = "JJJ Corp", ContactName = "JJJ", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0011", CompanyName = "KKK Corp", ContactName = "KKK", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0012", CompanyName = "LLL Corp", ContactName = "LLL", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0013", CompanyName = "MMM Corp", ContactName = "MMM", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0014", CompanyName = "NNN Corp", ContactName = "NNN", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0015", CompanyName = "OOO Corp", ContactName = "OOO", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0016", CompanyName = "PPP Corp", ContactName = "PPP", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0017", CompanyName = "QQQ Corp", ContactName = "QQQ", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0018", CompanyName = "RRR Corp", ContactName = "RRR", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0019", CompanyName = "SSS Corp", ContactName = "SSS", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0020", CompanyName = "TTT Corp", ContactName = "TTT", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0021", CompanyName = "UUU Corp", ContactName = "UUU", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0022", CompanyName = "VVV Corp", ContactName = "VVV", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0023", CompanyName = "WWW Corp", ContactName = "WWW", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0024", CompanyName = "ZZZ Corp", ContactName = "ZZZ", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0025", CompanyName = "YYY Corp", ContactName = "YYY", Country = "TH" });
+            Customers.Add(new Customer { CustomerID = "0026", CompanyName = "ZZZ Corp", ContactName = "ZZZ", Country = "TH" });
+        }        
+
+        public List<Customer> ListCustomers()
+        {
+            return Customers;
+        }
+    }
+}
+
+        
